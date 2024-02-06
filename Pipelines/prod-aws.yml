@@ -1,0 +1,5 @@
+#### AnyCloud Azure CI/CD Pipeline Template ####
+#### Continuous Delivery (CI) is in develop branch ####
+#### Manually Deploy PROD with Parameter via master branch ####
+variables:
+  env: dev

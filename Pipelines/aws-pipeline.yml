@@ -1,0 +1,55 @@
+parameters:
+- name: serviceName
+  displayName: 'Service Name'
+  type: string
+  default: budget
+  values:
+  - budget
+- name: accountId
+  displayName: 'AWS Account ID'
+  type: string
+- name: payload
+  displayName: 'one-line json payload'
+  default: "{}"
+  type: string
+- name: action
+  displayName: 'plan or apply'
+  default: "plan"
+  type: string
+
+trigger: none
+
+pool: AWS-Agent-Pool-$(ENV)
+
+variables:
+#Common Variables
+- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.SourceBranch'], 'refs/heads/master')) }}:
+  - template: dev-aws.yml
+- ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')) }}:
+  - template: prod-aws.yml
+- name: serviceName
+  value: ${{ parameters.serviceName }}
+- name: accountId
+  value: ${{ parameters.accountId }}
+- name: payload
+  value: ${{ parameters.payload }}
+- name: action
+  value: ${{ parameters.action }}
+
+stages:
+- stage: TerragruntDeployment
+  jobs:
+  - job: TerragruntDeployment
+    displayName: TerragruntDeployment
+    steps:
+    - bash: |
+        export AWS_DEFAULT_REGION=ap-southeast-2
+
+        # make sure you have assume role to the target account
+        assume-role.sh $(accountId)
+        export AWS_PROFILE=$(accountId)
+        aws sts get-caller-identity
+
+        cd terragrunt/aws
+        bash ./wrapper.sh $(action) $(serviceName) $(env) $(payload)
+      name: Terragrunt_Deployment
