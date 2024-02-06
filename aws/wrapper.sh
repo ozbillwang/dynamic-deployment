@@ -15,14 +15,14 @@ fi
 
 # Check if there are two parameters
 if [ -z "$1" ]; then
-  echo "Usage: $0 <servierName> <payload>"
+  echo "Usage: $0 <action> <servierName> <environment> <payload>"
   echo "Sample: $0 plan budget dev '{"key1": "value1", "key2": "value2", "key3": "value3"}' "
   exit 1
 fi
 
 action=$1
 serviceName=$2
-env=$3
+environment=$3
 payload="${4:-""}"
 
 while IFS=: read -r key value; do
@@ -35,6 +35,9 @@ accountId=$(aws sts get-caller-identity --query 'Account' --output text)
 
 echo $accountId
 echo $accountName
+echo $action
+echo $serviceName
+echo $environment
 
 rm -rf ./${accountName}
 
@@ -44,16 +47,19 @@ boilerplate \
   --output-folder "${accountName}" \
   --non-interactive \
   --var accountName="${accountName}" \
+  --var environment="${environment}" \
   --var accountId=\'${accountId}\'
-  --var env=\'${env}\'
 
-pushd ${accountName}
+# Not required any more.
+# export TERRAGRUNT_IAM_ROLE="arn:aws:iam::${accountId}:role/OrganizationAccountAccessRole"
+
+pushd ${accountName}/*/*/${serviceName}
 case "$action" in
   "apply")
-    terragrunt run-all apply
+    terragrunt apply -auto-approve
     ;;
   "plan")
-    terragrunt run-all plan  --terragrunt-non-interactive -out='planfile'
+    terragrunt plan  --terragrunt-non-interactive -out='planfile'
     ;;
   *)
     echo "Invalid action. Supported actions: apply, plan"
@@ -61,8 +67,3 @@ case "$action" in
     ;;
 esac
 popd
-
-echo "apply the change, after confirmed"
-echo pushd ${accountName}/ap-southeast-2/env/${serviceName}/
-echo terragrunt apply "planfile"
-echo popd
