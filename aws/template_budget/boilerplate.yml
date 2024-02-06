@@ -1,0 +1,7 @@
+variables:
+  - name: accountName
+    type: string
+  - name: accountId
+    type: string
+  - name: env
+    type: string

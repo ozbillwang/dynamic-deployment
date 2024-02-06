@@ -1,0 +1,7 @@
+variables:
+  - name: subscription_name
+    type: string
+  - name: subscription_id
+    type: string
+  - name: env
+    type: string
